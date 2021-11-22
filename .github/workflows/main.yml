@@ -1,0 +1,24 @@
+name: "mirror"
+on:
+  push:
+  schedule:
+    - cron: "0 * * * *" # Runs every hour, on the hour.
+  workflow_dispatch:
+jobs:
+  mirror:
+    runs-on: "ubuntu-latest"
+    strategy:
+      matrix:
+        upstream: ["https://git.sr.ht/~motiejus/bazel-zig-cc"]
+    steps:
+      - name: "Install SSH key"
+        uses: "shimataro/ssh-key-action@v2"
+        with:
+          key: "${{ secrets.SSH_KEY }}"
+          name: "id_ed25519"
+          known_hosts: "unnecessary"
+          config: |
+            Host *
+              StrictHostKeyChecking no
+      - run: "git clone --mirror \"${{ matrix.upstream }}\" \"$GITHUB_WORKSPACE\""
+      - run: "git push --mirror \"git@github.com:gmirror/$(basename $(git remote get-url origin))\""
